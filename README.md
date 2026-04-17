@@ -6,7 +6,7 @@ This folder contains a frontend-first prototype for your AI-powered financial an
 - Value Builder Playbook with live leverage indicators + AI value-plan generation
 - Individual Stock Fit Scorecards (budget + risk-aware)
 - Scenario Lab that turns natural-language questions into instant calculators
-- Team Budget panel with proportional split by financial capacity
+- Team Budget panel with company-cost planning, AI line-item assignment, and edit-then-calculate workflow
 - API-ready integration points for AI-generated explanations and suggestions
 
 ## Run
@@ -31,20 +31,23 @@ Weights:
 - Emergency runway: 26%
 - Discretionary burn: 18%
 
-## Team Fair Split Formula
+## Team Company Budget Model
 
 Per member:
 
-- `disposable = income - fixed_costs - debt_payment - min_savings`
-- `capacity = max(0, disposable)`
+- `effective_cost = base_cost * (allocation_percent / 100)`
+- `accountability_factor = (accountability_percent / 100) * (outcome_percent / 100)`
 
 Then:
 
-- `member_share = team_shared_cost * (member_capacity / total_capacity)`
+- `core_budget = sum(effective_cost) + sum(final_budget_line_items)`
+- `delivery_readiness = weighted(accountability, outcome)`
+- `accountability_reserve = core_budget * reserve_multiplier * (1.15 - delivery_readiness)`
+- `total_company_budget = core_budget + accountability_reserve`
 
 Affordability guardrail:
 
-- Flag when `member_share > 35% of disposable`
+- Variance tracking per line item: `variance = final_budget - ai_projected`
 
 ## AI Backend Contract (Frontend Expectation)
 
@@ -54,7 +57,7 @@ Frontend sends:
 
 ```json
 {
-  "task": "individual-analysis | value-plan | stock-scorecards | calculator-builder | team-fairness",
+  "task": "individual-analysis | value-plan | stock-scorecards | calculator-builder | team-budget-assignment",
   "model": "optional-model-name",
   "payload": { "context": "task-specific data" }
 }
@@ -156,14 +159,18 @@ Formula note:
 - Keep formulas arithmetic-only (numbers, variable ids, `+ - * / ( )`, and helper functions `min max abs pow round`).
 - Output IDs can be reused in later formulas, allowing chained calculations.
 
-### 5. `task = "team-fairness"`
+### 5. `task = "team-budget-assignment"`
 
 Expected response:
 
 ```json
 {
-  "fairnessSummary": "text",
-  "opportunities": ["tip 1", "tip 2", "tip 3"]
+  "lineItems": [
+    { "id": "vendor_coordination", "label": "Vendor Coordination", "projected": 540 }
+  ],
+  "rationale": "text",
+  "opportunities": ["tip 1", "tip 2", "tip 3"],
+  "warnings": ["warning text"]
 }
 ```
 

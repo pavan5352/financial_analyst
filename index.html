@@ -16,7 +16,7 @@
       <div>
         <p class="eyebrow">AI + Deterministic Math Layer</p>
         <h1>FinSync</h1>
-        <p class="subtitle">Financial Digital Twin for Individuals + Fairness Engine for Teams</p>
+        <p class="subtitle">Financial Digital Twin for Individuals + Cost Accountability Engine for Teams</p>
       </div>
       <details class="settings-panel">
         <summary>AI Endpoint Settings</summary>
@@ -276,75 +276,128 @@
     </section>
 
     <section id="team-tab" class="tab-content reveal">
-      <div class="grid two-col">
+      <div id="team-layout" class="grid two-col">
         <article class="card">
-          <h2>Team Member Capacity Inputs (4 members)</h2>
-          <p class="muted">
-            Fair split is based on financial capacity, not equal contribution.
+          <h2 id="team-tool-name">Outsourced Contracts Budget Console</h2>
+          <p id="team-tool-description" class="muted">
+            Model the company cost of making this team possible and accountable for outcomes.
           </p>
-          <div class="team-table-head">
-            <span>Name</span>
-            <span>Income</span>
-            <span>Fixed Costs</span>
-            <span>Debt</span>
-            <span>Min Savings</span>
+          <div class="team-config-grid">
+            <div class="form-grid">
+              <label for="team-type">Team Type</label>
+              <select id="team-type">
+                <option value="outsourced" selected>A team of outsourced contracts and their budgeting</option>
+                <option value="internal_temp">A team of internal temporary congregation solving a common problem</option>
+              </select>
+
+              <label for="team-outcome">Target Outcome</label>
+              <input id="team-outcome" type="text" value="Deliver project milestone with measurable accountability" />
+            </div>
           </div>
-          <div class="team-table-body">
-            <div class="team-row">
-              <input id="m1-name" type="text" value="Alex" />
-              <input id="m1-income" type="number" min="0" value="5200" />
-              <input id="m1-fixed" type="number" min="0" value="2600" />
-              <input id="m1-debt" type="number" min="0" value="400" />
-              <input id="m1-minsave" type="number" min="0" value="500" />
-            </div>
-            <div class="team-row">
-              <input id="m2-name" type="text" value="Priya" />
-              <input id="m2-income" type="number" min="0" value="4700" />
-              <input id="m2-fixed" type="number" min="0" value="2200" />
-              <input id="m2-debt" type="number" min="0" value="280" />
-              <input id="m2-minsave" type="number" min="0" value="450" />
-            </div>
-            <div class="team-row">
-              <input id="m3-name" type="text" value="Mateo" />
-              <input id="m3-income" type="number" min="0" value="3900" />
-              <input id="m3-fixed" type="number" min="0" value="2100" />
-              <input id="m3-debt" type="number" min="0" value="200" />
-              <input id="m3-minsave" type="number" min="0" value="300" />
-            </div>
-            <div class="team-row">
-              <input id="m4-name" type="text" value="Nina" />
-              <input id="m4-income" type="number" min="0" value="3500" />
-              <input id="m4-fixed" type="number" min="0" value="2050" />
-              <input id="m4-debt" type="number" min="0" value="180" />
-              <input id="m4-minsave" type="number" min="0" value="260" />
-            </div>
+          <div class="table-wrap">
+            <table class="team-grid-table">
+              <colgroup>
+                <col style="width: 30%" />
+                <col style="width: 18%" />
+                <col style="width: 17%" />
+                <col style="width: 17%" />
+                <col style="width: 18%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Name / Role</th>
+                  <th id="col-base-cost">Contract Cost (Monthly)</th>
+                  <th id="col-allocation">Engagement %</th>
+                  <th id="col-accountability">SLA Accountability %</th>
+                  <th id="col-outcome">Outcome Delivery %</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input id="m1-name" type="text" value="Alex - Lead" /></td>
+                  <td><input id="m1-base" type="number" min="0" value="5200" /></td>
+                  <td><input id="m1-alloc" type="number" min="0" max="100" value="100" /></td>
+                  <td><input id="m1-account" type="number" min="0" max="100" value="82" /></td>
+                  <td><input id="m1-outcome" type="number" min="0" max="100" value="78" /></td>
+                </tr>
+                <tr>
+                  <td><input id="m2-name" type="text" value="Priya - Ops" /></td>
+                  <td><input id="m2-base" type="number" min="0" value="4700" /></td>
+                  <td><input id="m2-alloc" type="number" min="0" max="100" value="95" /></td>
+                  <td><input id="m2-account" type="number" min="0" max="100" value="86" /></td>
+                  <td><input id="m2-outcome" type="number" min="0" max="100" value="80" /></td>
+                </tr>
+                <tr>
+                  <td><input id="m3-name" type="text" value="Mateo - QA" /></td>
+                  <td><input id="m3-base" type="number" min="0" value="3900" /></td>
+                  <td><input id="m3-alloc" type="number" min="0" max="100" value="90" /></td>
+                  <td><input id="m3-account" type="number" min="0" max="100" value="79" /></td>
+                  <td><input id="m3-outcome" type="number" min="0" max="100" value="74" /></td>
+                </tr>
+                <tr>
+                  <td><input id="m4-name" type="text" value="Nina - Support" /></td>
+                  <td><input id="m4-base" type="number" min="0" value="3500" /></td>
+                  <td><input id="m4-alloc" type="number" min="0" max="100" value="85" /></td>
+                  <td><input id="m4-account" type="number" min="0" max="100" value="76" /></td>
+                  <td><input id="m4-outcome" type="number" min="0" max="100" value="72" /></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </article>
 
         <article class="card">
-          <h2>Shared Team Expenses</h2>
-          <div class="form-grid">
-            <label for="team-tools">Tools / Subscriptions</label>
-            <input id="team-tools" type="number" min="0" value="360" />
-
-            <label for="team-meals">Meals</label>
-            <input id="team-meals" type="number" min="0" value="280" />
-
-            <label for="team-travel">Travel</label>
-            <input id="team-travel" type="number" min="0" value="650" />
-
-            <label for="team-misc">Misc</label>
-            <input id="team-misc" type="number" min="0" value="210" />
+          <h2 id="budget-table-title">Projected Company Budget Table</h2>
+          <p id="budget-table-note" class="muted">
+            Run AI assignment to project company budget lines, then optionally edit and calculate final totals.
+          </p>
+          <div class="table-wrap">
+            <table class="budget-line-table">
+              <colgroup>
+                <col style="width: 36%" />
+                <col style="width: 21%" />
+                <col style="width: 21%" />
+                <col style="width: 22%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Line Item</th>
+                  <th>AI Projected</th>
+                  <th>Final Budget</th>
+                  <th>Variance</th>
+                </tr>
+              </thead>
+              <tbody id="budget-line-items"></tbody>
+            </table>
           </div>
 
-          <button id="run-team-analysis" class="btn primary">Calculate Fair Split + AI Review</button>
-          <div class="team-total-card">
-            <p>Total Shared Cost</p>
-            <strong id="team-total">$0</strong>
+          <div class="team-action-row">
+            <button id="run-team-analysis" class="btn primary">Run AI Budget Assignment</button>
+            <button id="edit-budget" class="btn secondary" disabled>Edit Project Budget</button>
+            <button id="recalculate-budget" class="btn primary">Calculate Company Budget</button>
           </div>
-          <div id="team-breakdown" class="bar-board"></div>
+
+          <div class="team-summary-grid">
+            <div class="team-total-card">
+              <p>Total Company Budget</p>
+              <strong id="team-total">$0</strong>
+            </div>
+            <div class="team-total-card">
+              <p>Accountability Reserve</p>
+              <strong id="team-reserve">$0</strong>
+            </div>
+            <div class="team-total-card">
+              <p>Delivery Readiness</p>
+              <strong id="team-readiness">0%</strong>
+            </div>
+            <div class="team-total-card">
+              <p>Outcome-Adjusted Cost</p>
+              <strong id="team-outcome-cost">$0</strong>
+            </div>
+          </div>
+          <div id="team-breakdown" class="table-wrap team-breakdown-table"></div>
           <div id="team-ai-output" class="ai-output">
-            <p class="muted">Fairness notes and optimization tips will appear here.</p>
+            <p class="muted">Team budget rationale and optimization opportunities will appear here.</p>
           </div>
         </article>
       </div>

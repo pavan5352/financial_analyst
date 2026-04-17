@@ -1,14 +1,355 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FinSync — AI financial co-pilot for you and your team</title>
-    <meta name="description" content="FinSync: personal + team financial analyses grounded in your real numbers. AI insights, proportional team splits, and scenario battles." />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FinSync - Context-Aware Finance Co-Pilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="ambient-gradient"></div>
+  <main class="app-shell">
+    <header class="app-header reveal">
+      <div>
+        <p class="eyebrow">AI + Deterministic Math Layer</p>
+        <h1>FinSync</h1>
+        <p class="subtitle">Financial Digital Twin for Individuals + Fairness Engine for Teams</p>
+      </div>
+      <details class="settings-panel">
+        <summary>AI Endpoint Settings</summary>
+        <form id="settings-form" class="settings-form">
+          <label for="api-endpoint">Backend Endpoint</label>
+          <input id="api-endpoint" type="url" placeholder="https://your-backend/api/finance-ai" />
+
+          <label for="api-model">Model Name (optional)</label>
+          <input id="api-model" type="text" placeholder="gpt-5.4-mini" />
+
+          <label for="api-key">API Key (optional)</label>
+          <input id="api-key" type="password" placeholder="pk-..." />
+
+          <label class="checkbox-row">
+            <input id="use-mock-ai" type="checkbox" checked />
+            <span>Use mock AI responses if endpoint is unavailable</span>
+          </label>
+          <button type="submit" class="btn secondary">Save Settings</button>
+          <p id="settings-status" class="small-note"></p>
+        </form>
+      </details>
+    </header>
+
+    <section class="tab-controls reveal">
+      <button class="tab-button active" data-tab="individual-tab">Individual Analysis</button>
+      <button class="tab-button" data-tab="scenario-tab">Scenario Lab</button>
+      <button class="tab-button" data-tab="team-tab">Team Budget</button>
+    </section>
+
+    <section id="individual-tab" class="tab-content active reveal">
+      <div class="grid two-col">
+        <article class="card">
+          <h2>Inputs: Personal Finance Context</h2>
+          <p class="muted">
+            Enter monthly values. Core scores are computed locally and then sent to AI for context-grounded suggestions.
+          </p>
+          <div class="form-grid">
+            <label for="income">Monthly Income</label>
+            <input id="income" type="number" min="0" value="6000" />
+
+            <label for="housing">Housing</label>
+            <input id="housing" type="number" min="0" value="1800" />
+
+            <label for="utilities">Utilities</label>
+            <input id="utilities" type="number" min="0" value="260" />
+
+            <label for="groceries">Groceries</label>
+            <input id="groceries" type="number" min="0" value="540" />
+
+            <label for="transport">Transport</label>
+            <input id="transport" type="number" min="0" value="320" />
+
+            <label for="healthcare">Healthcare</label>
+            <input id="healthcare" type="number" min="0" value="280" />
+
+            <label for="lifestyle">Lifestyle / Discretionary</label>
+            <input id="lifestyle" type="number" min="0" value="650" />
+
+            <label for="savings">Monthly Savings</label>
+            <input id="savings" type="number" min="0" value="900" />
+
+            <label for="debt-payment">Monthly Debt Payment</label>
+            <input id="debt-payment" type="number" min="0" value="500" />
+
+            <label for="emergency-fund">Emergency Fund Balance</label>
+            <input id="emergency-fund" type="number" min="0" value="8500" />
+          </div>
+          <button id="run-individual-analysis" class="btn primary">Analyze with AI</button>
+        </article>
+
+        <article class="card">
+          <h2>Financial Health Score</h2>
+          <div class="score-wrap">
+            <div id="health-score" class="health-score">0</div>
+            <div>
+              <p id="health-band" class="pill neutral">Initializing</p>
+              <p class="small-note">Composite of savings rate, debt-to-income, emergency runway, and discretionary burn.</p>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <p>Savings Rate</p>
+              <strong id="metric-savings-rate">0%</strong>
+            </div>
+            <div class="metric-card">
+              <p>Debt-to-Income</p>
+              <strong id="metric-dti">0%</strong>
+            </div>
+            <div class="metric-card">
+              <p>Emergency Runway</p>
+              <strong id="metric-runway">0 mo</strong>
+            </div>
+            <div class="metric-card">
+              <p>Discretionary Burn</p>
+              <strong id="metric-burn">0%</strong>
+            </div>
+          </div>
+
+          <div id="individual-ai-output" class="ai-output">
+            <p class="muted">AI analysis output will appear here.</p>
+          </div>
+        </article>
+      </div>
+
+      <article class="card reveal">
+        <h2>Value Builder Playbook</h2>
+        <p class="muted">
+          This layer helps a common user convert analysis into outcomes. It highlights where money decisions create maximum impact.
+        </p>
+        <div id="value-levers" class="value-lever-grid">
+          <div class="lever-card">
+            <p>Cashflow Flex</p>
+            <strong id="lever-cashflow">0%</strong>
+            <span id="lever-cashflow-note" class="small-note">Waiting for inputs</span>
+          </div>
+          <div class="lever-card">
+            <p>Debt Pressure</p>
+            <strong id="lever-debt">0%</strong>
+            <span id="lever-debt-note" class="small-note">Waiting for inputs</span>
+          </div>
+          <div class="lever-card">
+            <p>Safety Buffer</p>
+            <strong id="lever-buffer">0%</strong>
+            <span id="lever-buffer-note" class="small-note">Waiting for inputs</span>
+          </div>
+          <div class="lever-card">
+            <p>Invest Readiness</p>
+            <strong id="lever-invest">0%</strong>
+            <span id="lever-invest-note" class="small-note">Waiting for inputs</span>
+          </div>
+        </div>
+        <div class="grid two-col">
+          <div class="form-grid">
+            <label for="goal-amount">Goal Amount</label>
+            <input id="goal-amount" type="number" min="0" value="12000" />
+
+            <label for="goal-months">Goal Timeline (months)</label>
+            <input id="goal-months" type="number" min="1" value="12" />
+
+            <label for="plan-style">Plan Style</label>
+            <select id="plan-style">
+              <option value="conservative">Conservative execution</option>
+              <option value="balanced" selected>Balanced execution</option>
+              <option value="aggressive">Aggressive execution</option>
+            </select>
+          </div>
+          <div>
+            <button id="run-value-plan" class="btn primary">Generate AI Value Plan</button>
+            <div id="value-plan-output" class="ai-output compact-output">
+              <p class="muted">AI value plan will appear here.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <details id="stock-scorecard-panel" class="card reveal collapsible-card">
+        <summary class="collapsible-summary">
+          <div>
+            <h2>Stock Fit Scorecards (Individual-Only)</h2>
+            <p class="muted">
+              AI rates suggested stocks against your budget range and risk posture. This section is excluded from team budgeting.
+            </p>
+          </div>
+          <span id="stock-panel-toggle-label" class="pill neutral">Expand</span>
+        </summary>
+        <div class="collapsible-body grid two-col">
+          <div class="form-grid">
+            <label for="invest-budget">Monthly Invest Budget</label>
+            <input id="invest-budget" type="number" min="0" value="450" />
+
+            <label for="risk-profile">Risk Profile</label>
+            <select id="risk-profile">
+              <option value="conservative">Conservative</option>
+              <option value="balanced" selected>Balanced</option>
+              <option value="growth">Growth</option>
+            </select>
+
+            <label for="sector-preferences">Preferred Sectors (comma separated)</label>
+            <input id="sector-preferences" type="text" value="technology, healthcare, index funds" />
+
+            <label for="tickers">Tickers to Score (comma separated)</label>
+            <input id="tickers" type="text" value="VOO, MSFT, JNJ, NVDA" />
+
+            <label for="scorecard-mode">Scorecard Mode</label>
+            <select id="scorecard-mode">
+              <option value="balanced_quality" selected>Balanced Quality</option>
+              <option value="defensive_income">Defensive Income</option>
+              <option value="growth_momentum">Growth Momentum</option>
+              <option value="index_first">Index-First</option>
+            </select>
+
+            <label for="max-position">Max Position Size per Stock (%)</label>
+            <input id="max-position" type="number" min="1" max="100" value="20" />
+          </div>
+          <div class="stock-panel">
+            <button id="run-stock-score" class="btn primary">Run AI Stock Scorecards</button>
+            <p class="small-note">
+              Expected response shape:
+              <code>{ scores: [{ ticker, fitScore, riskLabel, subscores:{ valuation, profitability, cashflow, volatility, liquidity }, rationale, caution, allocationHint }] }</code>
+            </p>
+            <div id="stock-score-output" class="stock-grid">
+              <p class="muted">Stock scorecards will appear here.</p>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section id="scenario-tab" class="tab-content reveal">
+      <div class="grid two-col">
+        <article class="card">
+          <h2>AI Scenario-to-Calculator Builder</h2>
+          <p class="muted">
+            Ask a plain-language financial question. AI returns a calculator schema and this UI is built instantly for that scenario.
+          </p>
+          <div class="form-grid">
+            <label for="calculator-question">Scenario Question</label>
+            <textarea id="calculator-question" rows="4" placeholder="Example: Should I prepay a 7.2% loan or invest monthly in an index fund for 3 years?"></textarea>
+
+            <label for="calc-context-budget">Monthly Budget Anchor</label>
+            <input id="calc-context-budget" type="number" min="0" value="800" />
+
+            <label for="calc-context-horizon">Decision Horizon (months)</label>
+            <input id="calc-context-horizon" type="number" min="1" value="36" />
+
+            <label for="calc-context-risk">Risk Preference</label>
+            <select id="calc-context-risk">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <button id="build-calculator" class="btn primary">Build Calculator from Question</button>
+          <p class="small-note">
+            Expected response:
+            <code>{ calculator:{ title, description, assumptions, inputs, outputs }, guidance }</code>
+          </p>
+          <div id="calculator-builder-notes" class="ai-output compact-output">
+            <p class="muted">Builder notes and assumptions will appear here.</p>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Generated Calculator</h2>
+          <p class="muted">
+            Every new scenario can generate a different calculator UI with custom inputs and computed outputs.
+          </p>
+          <div id="calculator-history" class="question-history">
+            <p class="small-note">No scenario questions yet.</p>
+          </div>
+          <div id="dynamic-calculator" class="dynamic-calculator-shell">
+            <p class="muted">Generated calculator will appear here.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="team-tab" class="tab-content reveal">
+      <div class="grid two-col">
+        <article class="card">
+          <h2>Team Member Capacity Inputs (4 members)</h2>
+          <p class="muted">
+            Fair split is based on financial capacity, not equal contribution.
+          </p>
+          <div class="team-table-head">
+            <span>Name</span>
+            <span>Income</span>
+            <span>Fixed Costs</span>
+            <span>Debt</span>
+            <span>Min Savings</span>
+          </div>
+          <div class="team-table-body">
+            <div class="team-row">
+              <input id="m1-name" type="text" value="Alex" />
+              <input id="m1-income" type="number" min="0" value="5200" />
+              <input id="m1-fixed" type="number" min="0" value="2600" />
+              <input id="m1-debt" type="number" min="0" value="400" />
+              <input id="m1-minsave" type="number" min="0" value="500" />
+            </div>
+            <div class="team-row">
+              <input id="m2-name" type="text" value="Priya" />
+              <input id="m2-income" type="number" min="0" value="4700" />
+              <input id="m2-fixed" type="number" min="0" value="2200" />
+              <input id="m2-debt" type="number" min="0" value="280" />
+              <input id="m2-minsave" type="number" min="0" value="450" />
+            </div>
+            <div class="team-row">
+              <input id="m3-name" type="text" value="Mateo" />
+              <input id="m3-income" type="number" min="0" value="3900" />
+              <input id="m3-fixed" type="number" min="0" value="2100" />
+              <input id="m3-debt" type="number" min="0" value="200" />
+              <input id="m3-minsave" type="number" min="0" value="300" />
+            </div>
+            <div class="team-row">
+              <input id="m4-name" type="text" value="Nina" />
+              <input id="m4-income" type="number" min="0" value="3500" />
+              <input id="m4-fixed" type="number" min="0" value="2050" />
+              <input id="m4-debt" type="number" min="0" value="180" />
+              <input id="m4-minsave" type="number" min="0" value="260" />
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Shared Team Expenses</h2>
+          <div class="form-grid">
+            <label for="team-tools">Tools / Subscriptions</label>
+            <input id="team-tools" type="number" min="0" value="360" />
+
+            <label for="team-meals">Meals</label>
+            <input id="team-meals" type="number" min="0" value="280" />
+
+            <label for="team-travel">Travel</label>
+            <input id="team-travel" type="number" min="0" value="650" />
+
+            <label for="team-misc">Misc</label>
+            <input id="team-misc" type="number" min="0" value="210" />
+          </div>
+
+          <button id="run-team-analysis" class="btn primary">Calculate Fair Split + AI Review</button>
+          <div class="team-total-card">
+            <p>Total Shared Cost</p>
+            <strong id="team-total">$0</strong>
+          </div>
+          <div id="team-breakdown" class="bar-board"></div>
+          <div id="team-ai-output" class="ai-output">
+            <p class="muted">Fairness notes and optimization tips will appear here.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+  <script src="./app.js"></script>
+</body>
 </html>

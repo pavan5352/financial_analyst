@@ -487,6 +487,119 @@ textarea:focus {
   margin-top: 0;
 }
 
+.team-config-grid {
+  margin-bottom: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+#team-layout {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+#team-layout > .card {
+  height: 100%;
+  min-width: 0;
+}
+
+.table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.team-grid-table,
+.budget-line-table,
+.breakdown-table {
+  width: 100%;
+  min-width: 520px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 0.44rem;
+}
+
+.team-grid-table th,
+.budget-line-table th,
+.breakdown-table th {
+  text-align: left;
+  font-size: 0.76rem;
+  color: var(--muted-500);
+  font-weight: 600;
+  padding: 0 0.35rem 0.2rem;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.team-grid-table td,
+.budget-line-table td,
+.breakdown-table td {
+  padding: 0 0.35rem;
+}
+
+.team-grid-table input,
+.budget-line-table input {
+  width: 100%;
+  margin: 0;
+  max-width: 100%;
+}
+
+#team-layout select,
+#team-layout input,
+#team-layout textarea {
+  max-width: 100%;
+}
+
+.team-grid-table td:first-child input {
+  min-width: 140px;
+}
+
+.budget-final-input[disabled] {
+  background: #f4f8fa;
+  color: #6c8190;
+}
+
+.team-action-row {
+  margin-top: 0.82rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.team-action-row .btn {
+  margin-top: 0;
+}
+
+.team-summary-grid {
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.62rem;
+}
+
+.team-summary-grid .team-total-card {
+  margin-top: 0;
+}
+
+.team-breakdown-table {
+  margin-top: 0.82rem;
+}
+
+.variance-positive {
+  color: var(--good);
+  font-weight: 700;
+}
+
+.variance-negative {
+  color: var(--risk);
+  font-weight: 700;
+}
+
+.variance-neutral {
+  color: var(--ink-700);
+  font-weight: 700;
+}
+
 .team-table-head,
 .team-row {
   display: grid;
@@ -633,6 +746,10 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  #team-layout {
+    grid-template-columns: 1fr;
+  }
+
   .value-lever-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -645,6 +762,18 @@ textarea:focus {
 @media (max-width: 720px) {
   .team-table-head {
     display: none;
+  }
+
+  .team-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .team-action-row {
+    flex-direction: column;
+  }
+
+  .team-action-row .btn {
+    width: 100%;
   }
 
   .team-row {

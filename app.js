@@ -6,6 +6,49 @@ const SCORE_WEIGHTS = {
   discretionaryBurn: 0.18,
 };
 
+const TEAM_TYPE_CONFIGS = {
+  outsourced: {
+    toolName: "Outsourced Contracts Budget Console",
+    description:
+      "Budget the company cost of outsourced contracts with accountability reserves linked to delivery outcomes.",
+    baseLabel: "Contract Cost (Monthly)",
+    allocationLabel: "Engagement %",
+    accountabilityLabel: "SLA Accountability %",
+    outcomeLabel: "Outcome Delivery %",
+    budgetTitle: "Projected Company Budget Table",
+    budgetNote:
+      "AI projects outsourced team line-items. Edit final values if required, then calculate total accountable company budget.",
+    reserveMultiplier: 0.14,
+    lineItems: [
+      { id: "vendor_coordination", label: "Vendor Coordination", defaultValue: 520 },
+      { id: "qa_compliance", label: "QA / Compliance", defaultValue: 420 },
+      { id: "communication_ops", label: "Communication Ops", defaultValue: 320 },
+      { id: "tools_licenses", label: "Tools / Licenses", defaultValue: 360 },
+      { id: "contingency", label: "Contingency", defaultValue: 280 },
+    ],
+  },
+  internal_temp: {
+    toolName: "Internal Taskforce Cost Console",
+    description:
+      "Budget temporary internal congregation costs, ownership commitments, and execution buffers tied to problem resolution.",
+    baseLabel: "Internal Cost (Monthly)",
+    allocationLabel: "Allocation %",
+    accountabilityLabel: "Ownership Accountability %",
+    outcomeLabel: "Problem Resolution %",
+    budgetTitle: "Projected Internal Team Budget Table",
+    budgetNote:
+      "AI projects temporary internal team line-items. Edit final values if required, then calculate total accountable company budget.",
+    reserveMultiplier: 0.1,
+    lineItems: [
+      { id: "internal_enablement", label: "Internal Enablement", defaultValue: 460 },
+      { id: "cross_function_sync", label: "Cross-Function Sync", defaultValue: 300 },
+      { id: "workshop_execution", label: "Workshop Execution", defaultValue: 280 },
+      { id: "travel_logistics", label: "Travel / Logistics", defaultValue: 240 },
+      { id: "contingency", label: "Contingency", defaultValue: 220 },
+    ],
+  },
+};
+
 const toNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
@@ -26,6 +69,9 @@ const formatNumber = (value, decimals = 2) =>
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(value);
+
+let activeTeamType = "outsourced";
+let budgetEditingEnabled = false;
 
 function switchTabs() {
   const buttons = document.querySelectorAll(".tab-button");
@@ -576,20 +622,29 @@ function mockAIResponse(task, payload) {
     };
   }
 
-  if (task === "team-fairness") {
-    const highPressureMembers = payload.members.filter((member) => member.overloaded).map((member) => member.name);
+  if (task === "team-budget-assignment") {
+    const config = TEAM_TYPE_CONFIGS[payload.teamType] || TEAM_TYPE_CONFIGS.outsourced;
+    const readiness = asFiniteNumber(payload.metrics?.deliveryReadiness, 0.72);
+    const riskAdjustment = clamp(1.16 - readiness, 0.88, 1.28);
+    const lineItems = config.lineItems.map((item, index) => ({
+      id: item.id,
+      label: item.label,
+      projected: Math.round(item.defaultValue * riskAdjustment * (1 + index * 0.03)),
+    }));
+
     return {
-      fairnessSummary:
-        highPressureMembers.length > 0
-          ? `Current split is mathematically fair by capacity, but ${highPressureMembers.join(
-              ", "
-            )} is close to affordability limits.`
-          : "Current split is balanced across capacity and no member breaches affordability guardrails.",
+      lineItems,
+      rationale:
+        "Projected budgets account for team type, readiness, and accountability gap. Final values should be confirmed against current delivery constraints.",
       opportunities: [
-        "Negotiate software stack and remove one overlapping subscription.",
-        "Convert one travel day to remote sync to reduce monthly travel burn.",
-        "Set a hard team meals cap and rotate hosting to flatten volatility.",
+        "Bundle recurring vendor and tooling spend under one procurement lane.",
+        "Tie contingency release to milestone acceptance to improve accountability.",
+        "Review low-impact line items before increasing core delivery costs.",
       ],
+      warnings:
+        readiness < 0.7
+          ? ["Readiness is below preferred threshold. Keep reserve buffer intact."]
+          : ["Readiness is stable. You may optimize reserve gradually."],
     };
   }
 
@@ -844,99 +899,231 @@ function renderDynamicCalculator(spec) {
   recomputeDynamicCalculator(spec);
 }
 
-function getMember(index) {
-  const name = document.getElementById(`m${index}-name`).value.trim() || `Member ${index}`;
-  const income = toNumber(document.getElementById(`m${index}-income`).value);
-  const fixed = toNumber(document.getElementById(`m${index}-fixed`).value);
-  const debt = toNumber(document.getElementById(`m${index}-debt`).value);
-  const minsave = toNumber(document.getElementById(`m${index}-minsave`).value);
-
-  const disposable = Math.max(0, income - fixed - debt - minsave);
-  const capacity = disposable;
-  return { name, income, fixed, debt, minsave, disposable, capacity };
+function getTeamTypeConfig(teamType) {
+  return TEAM_TYPE_CONFIGS[teamType] || TEAM_TYPE_CONFIGS.outsourced;
 }
 
-function collectTeamInputs() {
-  const members = [1, 2, 3, 4].map((index) => getMember(index));
-  const shared = {
-    tools: toNumber(document.getElementById("team-tools").value),
-    meals: toNumber(document.getElementById("team-meals").value),
-    travel: toNumber(document.getElementById("team-travel").value),
-    misc: toNumber(document.getElementById("team-misc").value),
-  };
-  const totalShared = shared.tools + shared.meals + shared.travel + shared.misc;
-  const totalCapacity = members.reduce((sum, member) => sum + member.capacity, 0);
-
-  const computedMembers = members.map((member) => {
-    let share = 0;
-    if (totalShared > 0 && totalCapacity > 0) {
-      share = (totalShared * member.capacity) / totalCapacity;
-    } else if (totalShared > 0) {
-      share = totalShared / members.length;
-    }
-
-    const affordabilityCap = member.disposable * 0.35;
-    const overloaded =
-      (member.disposable <= 0 && share > 0) || (member.disposable > 0 && share > affordabilityCap);
-
-    return {
-      ...member,
-      share,
-      shareOfTeamCost: totalShared > 0 ? share / totalShared : 0,
-      affordabilityCap,
-      overloaded,
-    };
+function setBudgetInputsEditable(enabled) {
+  budgetEditingEnabled = enabled;
+  const finalInputs = document.querySelectorAll(".budget-final-input");
+  finalInputs.forEach((input) => {
+    input.disabled = !enabled;
   });
-
-  return { members: computedMembers, shared, totalShared, totalCapacity };
+  const editButton = document.getElementById("edit-budget");
+  if (editButton) {
+    editButton.textContent = enabled ? "Lock Project Budget" : "Edit Project Budget";
+  }
 }
 
-function renderTeamBreakdown(teamData) {
-  const totalNode = document.getElementById("team-total");
-  const breakdownNode = document.getElementById("team-breakdown");
-  totalNode.textContent = formatCurrency(teamData.totalShared);
-
-  const rows = teamData.members
-    .map((member) => {
-      const width = clamp(member.shareOfTeamCost) * 100;
-      const overloadLabel = member.overloaded
-        ? `<span class="risk-note">Affordability alert: ${member.name} exceeds 35% of disposable income.</span>`
-        : "";
-
+function renderBudgetRows(config, projectedMap = {}, finalMap = {}) {
+  const body = document.getElementById("budget-line-items");
+  body.innerHTML = config.lineItems
+    .map((item) => {
+      const projected = Number.isFinite(projectedMap[item.id]) ? projectedMap[item.id] : item.defaultValue;
+      const finalBudget = Number.isFinite(finalMap[item.id]) ? finalMap[item.id] : projected;
       return `
-        <div class="bar-row">
-          <div class="bar-label">
-            <span>${member.name}</span>
-            <span>${formatCurrency(member.share)} (${(width || 0).toFixed(1)}%)</span>
-          </div>
-          <div class="bar-track">
-            <div class="bar-fill" style="width: ${width.toFixed(1)}%"></div>
-          </div>
-          <p class="small-note">Capacity: ${formatCurrency(member.capacity)} | Affordability cap: ${formatCurrency(
-        member.affordabilityCap
-      )}</p>
-          ${overloadLabel}
-        </div>
+        <tr data-line-id="${item.id}">
+          <td>${item.label}</td>
+          <td>
+            <input class="budget-ai-input" data-line-id="${item.id}" type="number" min="0" value="${projected}" disabled />
+          </td>
+          <td>
+            <input class="budget-final-input" data-line-id="${item.id}" type="number" min="0" value="${finalBudget}" disabled />
+          </td>
+          <td><span id="variance-${item.id}" class="variance-neutral">${formatCurrency(0)}</span></td>
+        </tr>
       `;
     })
     .join("");
+}
 
-  const healthy = teamData.members.every((member) => !member.overloaded);
-  breakdownNode.innerHTML = `${rows}${
-    healthy ? `<p class="good-note">No member breaches the affordability guardrail.</p>` : ""
-  }`;
+function applyTeamTypeConfig(teamType, preserveValues = false) {
+  activeTeamType = TEAM_TYPE_CONFIGS[teamType] ? teamType : "outsourced";
+  const config = getTeamTypeConfig(activeTeamType);
+  document.getElementById("team-tool-name").textContent = config.toolName;
+  document.getElementById("team-tool-description").textContent = config.description;
+  document.getElementById("col-base-cost").textContent = config.baseLabel;
+  document.getElementById("col-allocation").textContent = config.allocationLabel;
+  document.getElementById("col-accountability").textContent = config.accountabilityLabel;
+  document.getElementById("col-outcome").textContent = config.outcomeLabel;
+  document.getElementById("budget-table-title").textContent = config.budgetTitle;
+  document.getElementById("budget-table-note").textContent = config.budgetNote;
+
+  let projectedMap = {};
+  let finalMap = {};
+  if (preserveValues) {
+    document.querySelectorAll(".budget-ai-input").forEach((input) => {
+      projectedMap[input.dataset.lineId] = toNumber(input.value);
+    });
+    document.querySelectorAll(".budget-final-input").forEach((input) => {
+      finalMap[input.dataset.lineId] = toNumber(input.value);
+    });
+  }
+
+  renderBudgetRows(config, projectedMap, finalMap);
+  setBudgetInputsEditable(false);
+  const editButton = document.getElementById("edit-budget");
+  if (editButton) {
+    editButton.disabled = true;
+  }
+}
+
+function getTeamMember(index) {
+  const name = document.getElementById(`m${index}-name`).value.trim() || `Role ${index}`;
+  const baseCost = toNumber(document.getElementById(`m${index}-base`).value);
+  const allocationPct = Math.min(100, toNumber(document.getElementById(`m${index}-alloc`).value));
+  const accountabilityPct = Math.min(100, toNumber(document.getElementById(`m${index}-account`).value));
+  const outcomePct = Math.min(100, toNumber(document.getElementById(`m${index}-outcome`).value));
+  const effectiveCost = baseCost * (allocationPct / 100);
+  const accountabilityFactor = (accountabilityPct / 100) * (outcomePct / 100);
+  return {
+    name,
+    baseCost,
+    allocationPct,
+    accountabilityPct,
+    outcomePct,
+    effectiveCost,
+    accountabilityFactor,
+  };
+}
+
+function collectBudgetLineItems() {
+  const rows = document.querySelectorAll("#budget-line-items tr");
+  return Array.from(rows).map((row) => {
+    const id = row.dataset.lineId;
+    const label = row.querySelector("td").textContent.trim();
+    const projected = toNumber(row.querySelector(".budget-ai-input").value);
+    const finalBudget = toNumber(row.querySelector(".budget-final-input").value);
+    return {
+      id,
+      label,
+      projected,
+      finalBudget,
+      variance: finalBudget - projected,
+    };
+  });
+}
+
+function collectTeamInputs() {
+  const teamType = document.getElementById("team-type").value;
+  const config = getTeamTypeConfig(teamType);
+  const members = [1, 2, 3, 4].map((index) => getTeamMember(index));
+  const budgetLines = collectBudgetLineItems();
+  const targetOutcome = document.getElementById("team-outcome").value.trim();
+  return { teamType, config, members, budgetLines, targetOutcome };
+}
+
+function computeTeamBudgetMetrics(teamData) {
+  const memberCost = teamData.members.reduce((sum, member) => sum + member.effectiveCost, 0);
+  const projectedOpsCost = teamData.budgetLines.reduce((sum, line) => sum + line.projected, 0);
+  const finalOpsCost = teamData.budgetLines.reduce((sum, line) => sum + line.finalBudget, 0);
+
+  const avgAccountability =
+    teamData.members.reduce((sum, member) => sum + member.accountabilityPct / 100, 0) / teamData.members.length;
+  const avgOutcome =
+    teamData.members.reduce((sum, member) => sum + member.outcomePct / 100, 0) / teamData.members.length;
+  const deliveryReadiness = clamp(avgAccountability * 0.45 + avgOutcome * 0.55);
+
+  const coreBudget = memberCost + finalOpsCost;
+  const reserve = coreBudget * teamData.config.reserveMultiplier * (1.15 - deliveryReadiness);
+  const totalBudget = coreBudget + reserve;
+  const outcomeAdjustedCost = totalBudget / Math.max(0.35, avgOutcome);
+
+  return {
+    memberCost,
+    projectedOpsCost,
+    finalOpsCost,
+    coreBudget,
+    reserve,
+    totalBudget,
+    outcomeAdjustedCost,
+    avgAccountability,
+    avgOutcome,
+    deliveryReadiness,
+  };
+}
+
+function renderTeamBreakdown(teamData, metrics) {
+  document.getElementById("team-total").textContent = formatCurrency(metrics.totalBudget);
+  document.getElementById("team-reserve").textContent = formatCurrency(metrics.reserve);
+  document.getElementById("team-readiness").textContent = formatPercent(metrics.deliveryReadiness);
+  document.getElementById("team-outcome-cost").textContent = formatCurrency(metrics.outcomeAdjustedCost);
+
+  teamData.budgetLines.forEach((line) => {
+    const varianceNode = document.getElementById(`variance-${line.id}`);
+    if (!varianceNode) {
+      return;
+    }
+    varianceNode.textContent = formatCurrency(line.variance);
+    varianceNode.className =
+      line.variance > 0
+        ? "variance-negative"
+        : line.variance < 0
+          ? "variance-positive"
+          : "variance-neutral";
+  });
+
+  const rows = teamData.members
+    .map(
+      (member) => `
+        <tr>
+          <td>${member.name}</td>
+          <td>${formatCurrency(member.effectiveCost)}</td>
+          <td>${member.accountabilityPct.toFixed(0)}%</td>
+          <td>${member.outcomePct.toFixed(0)}%</td>
+          <td>${formatPercent(member.accountabilityFactor)}</td>
+        </tr>
+      `
+    )
+    .join("");
+
+  document.getElementById("team-breakdown").innerHTML = `
+    <table class="breakdown-table">
+      <thead>
+        <tr>
+          <th>Team Role</th>
+          <th>Effective Cost</th>
+          <th>Accountability</th>
+          <th>Outcome</th>
+          <th>Responsibility Index</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
 }
 
 function renderTeamAIOutput(data) {
   const outputNode = document.getElementById("team-ai-output");
   const opportunities = Array.isArray(data.opportunities) ? data.opportunities : [];
+  const warnings = Array.isArray(data.warnings) ? data.warnings : [];
   outputNode.innerHTML = `
-    <p><strong>Fairness Read:</strong> ${data.fairnessSummary || "No fairness summary returned."}</p>
-    <p><strong>Cost-Saving Opportunities:</strong></p>
+    <p><strong>AI Rationale:</strong> ${data.rationale || "No rationale returned."}</p>
+    <p><strong>Optimization Opportunities:</strong></p>
     <ol>
       ${opportunities.map((item) => `<li>${item}</li>`).join("")}
     </ol>
+    <p><strong>Warnings:</strong> ${warnings.join(" | ") || "No critical warnings."}</p>
   `;
+}
+
+function applyAIBudgetAssignment(result, config) {
+  const projectedMap = {};
+  const finalMap = {};
+  const lineItems = Array.isArray(result.lineItems) ? result.lineItems : [];
+  lineItems.forEach((item) => {
+    const normalizedId = sanitizeId(item.id || item.label, item.id || "line");
+    const projected = toNumber(item.projected);
+    projectedMap[normalizedId] = projected;
+    finalMap[normalizedId] = projected;
+  });
+
+  renderBudgetRows(config, projectedMap, finalMap);
+  setBudgetInputsEditable(false);
+  const editButton = document.getElementById("edit-budget");
+  if (editButton) {
+    editButton.disabled = false;
+  }
 }
 
 function initializeIndividualSection() {
@@ -1113,52 +1300,85 @@ function initializeScenarioSection() {
 }
 
 function initializeTeamSection() {
-  const inputIds = [
+  const memberInputIds = [
     "m1-name",
-    "m1-income",
-    "m1-fixed",
-    "m1-debt",
-    "m1-minsave",
+    "m1-base",
+    "m1-alloc",
+    "m1-account",
+    "m1-outcome",
     "m2-name",
-    "m2-income",
-    "m2-fixed",
-    "m2-debt",
-    "m2-minsave",
+    "m2-base",
+    "m2-alloc",
+    "m2-account",
+    "m2-outcome",
     "m3-name",
-    "m3-income",
-    "m3-fixed",
-    "m3-debt",
-    "m3-minsave",
+    "m3-base",
+    "m3-alloc",
+    "m3-account",
+    "m3-outcome",
     "m4-name",
-    "m4-income",
-    "m4-fixed",
-    "m4-debt",
-    "m4-minsave",
-    "team-tools",
-    "team-meals",
-    "team-travel",
-    "team-misc",
+    "m4-base",
+    "m4-alloc",
+    "m4-account",
+    "m4-outcome",
+    "team-outcome",
   ];
+
+  const teamTypeSelect = document.getElementById("team-type");
+  const budgetBody = document.getElementById("budget-line-items");
+  const runAiButton = document.getElementById("run-team-analysis");
+  const editButton = document.getElementById("edit-budget");
+  const calculateButton = document.getElementById("recalculate-budget");
+  const outputNode = document.getElementById("team-ai-output");
 
   const recalc = () => {
     const teamData = collectTeamInputs();
-    renderTeamBreakdown(teamData);
-    return teamData;
+    const metrics = computeTeamBudgetMetrics(teamData);
+    renderTeamBreakdown(teamData, metrics);
+    return { teamData, metrics };
   };
 
-  inputIds.forEach((id) => {
+  memberInputIds.forEach((id) => {
     document.getElementById(id).addEventListener("input", recalc);
   });
 
-  const button = document.getElementById("run-team-analysis");
-  button.addEventListener("click", async () => {
-    const outputNode = document.getElementById("team-ai-output");
-    const teamData = recalc();
+  teamTypeSelect.addEventListener("change", () => {
+    applyTeamTypeConfig(teamTypeSelect.value);
+    recalc();
+    outputNode.innerHTML = `<p class="muted">Team type updated. Run AI budget assignment for new projections.</p>`;
+  });
+
+  budgetBody.addEventListener("input", (event) => {
+    if (event.target.classList.contains("budget-final-input")) {
+      recalc();
+    }
+  });
+
+  editButton.addEventListener("click", () => {
+    if (editButton.disabled) {
+      return;
+    }
+    setBudgetInputsEditable(!budgetEditingEnabled);
+  });
+
+  calculateButton.addEventListener("click", () => {
+    recalc();
+  });
+
+  runAiButton.addEventListener("click", async () => {
+    const snapshot = recalc();
     setLoading(outputNode, true);
-    outputNode.innerHTML = `<p class="muted">Running AI fairness review on computed contribution plan...</p>`;
+    outputNode.innerHTML = `<p class="muted">Running AI budget assignment for company-cost planning...</p>`;
 
     try {
-      const result = await callAI("team-fairness", teamData);
+      const result = await callAI("team-budget-assignment", {
+        teamType: snapshot.teamData.teamType,
+        targetOutcome: snapshot.teamData.targetOutcome,
+        members: snapshot.teamData.members,
+        metrics: snapshot.metrics,
+      });
+      applyAIBudgetAssignment(result, snapshot.teamData.config);
+      recalc();
       renderTeamAIOutput(result);
     } catch (error) {
       outputNode.innerHTML = `<p class="risk-note">AI request failed: ${error.message}. Turn on mock mode or verify endpoint.</p>`;
@@ -1167,6 +1387,7 @@ function initializeTeamSection() {
     }
   });
 
+  applyTeamTypeConfig(teamTypeSelect.value);
   recalc();
 }
 
